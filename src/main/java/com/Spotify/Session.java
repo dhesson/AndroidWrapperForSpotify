@@ -133,7 +133,7 @@ public class Session
 	{
 		Log.d("SpotifySession", "---** Java:OnLoggedIn: ");
 		//Backstage.musicManager.setSpotifyLoggedIn(Backstage.musicManager.spotifySession.IsLoggedIn());
-		Log.d("SpotifySession", "---** Java:IsLoggedIn: " + Backstage.musicManager.isSpotifyLoggedIn());
+		Log.d("SpotifySession", "---** Java:IsLoggedIn: " + error);
 		//System.out.printf("JAVA - OnLoggedIn - error[%d]\n", error);
 	}
 
