@@ -54,350 +54,352 @@ unsigned int Spotify::JSession::ms_threadID;
 #endif
 #include <stdlib.h>
 
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm2, void* reserved)
-{
-	JSESSION_VALIDATE_THREAD();
-
-	JNIEnv* env = NULL;
-	jint result = -1;
-
-	if(JNI_OK != vm2->GetEnv((void **)&env, JNI_VERSION_1_6))
+extern "C" {
+	JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm2, void* reserved)
 	{
-		return -1;
+		JSESSION_VALIDATE_THREAD();
+
+		JNIEnv* env = NULL;
+		jint result = -1;
+
+		if(JNI_OK != vm2->GetEnv((void **)&env, JNI_VERSION_1_6))
+		{
+			return -1;
+		}
+
+		/* success -- return valid version number */
+		result = JNI_VERSION_1_6;
+
+		return result;
 	}
 
-	/* success -- return valid version number */
-	result = JNI_VERSION_1_6;
+	JNIEXPORT jint JNICALL Java_com_Spotify_Session_NativeCreate
+	  (JNIEnv *env, jobject object)
+	{
+		__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "--- JSession:NativeCreate");
 
-	return result;
-}
+		Spotify::JSession* pSession = new Spotify::JSession( env, object );
+			
+		return Spotify::PointerToNativePtr( pSession );
+	}
 
-JNIEXPORT jint JNICALL Java_com_Spotify_Session_NativeCreate
-  (JNIEnv *env, jobject object)
-{
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "--- JSession:NativeCreate");
+	JNIEXPORT void JNICALL Java_com_Spotify_Session_NativeDestroy
+	  (JNIEnv *env, jobject object, jint nativePtr)
+	{
+		JSESSION_VALIDATE_THREAD();
 
-	Spotify::JSession* pSession = new Spotify::JSession( env, object );
+		Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
+		delete pSession;
+	}
+
+	JNIEXPORT jint JNICALL Java_com_Spotify_Session_Initialise
+	  (JNIEnv *env, jobject object, jint nativePtr, jobject jconfig)
+	{
+
+		__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "### JSession:initialise");
+
+		JSESSION_VALIDATE_THREAD();
+
+		jboolean isCopy;
+		jfieldID fid;
+
+		jclass cls = env->GetObjectClass(jconfig);
 		
-	return Spotify::PointerToNativePtr( pSession );
-}
+		// appkey
+		fid = env->GetFieldID( cls, "m_appKey", "[C" );
+		jobject appKeyObj = env->GetObjectField( jconfig, fid );
+		jcharArray appKeyCharArray = static_cast<jcharArray>(appKeyObj);
+		jchar* appKey = env->GetCharArrayElements( appKeyCharArray, &isCopy );
 
-JNIEXPORT void JNICALL Java_com_Spotify_Session_NativeDestroy
-  (JNIEnv *env, jobject object, jint nativePtr)
-{
-	JSESSION_VALIDATE_THREAD();
+		fid = env->GetFieldID( cls, "m_appKeySize", "I" );
+		jint appKeySize = env->GetIntField( jconfig, fid );
 
-	Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
-	delete pSession;
-}
+		// make local binary copy of key
+		uint8_t* localAppKey = new uint8_t[ appKeySize ];
+		for (int i=0; i<appKeySize; i++)
+		{
+			localAppKey[i] = (uint8_t) appKey[i];
+		}
 
-JNIEXPORT jint JNICALL Java_com_Spotify_Session_Initialise
-  (JNIEnv *env, jobject object, jint nativePtr, jobject jconfig)
-{
+		__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "--- JSession:initialise:appKeySize:%d", appKeySize);
 
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "### JSession:initialise");
+		fid = env->GetFieldID( cls, "m_cacheLocation", "Ljava/lang/String;" );	
+		jstring strCacheLocation = static_cast<jstring>( env->GetObjectField( jconfig, fid ) );
+		const char* szCacheLocation = env->GetStringUTFChars(strCacheLocation, &isCopy );
 
-	JSESSION_VALIDATE_THREAD();
+		fid = env->GetFieldID( cls, "m_settingsLocation", "Ljava/lang/String;" );	
+		jstring strSettingsLocation = static_cast<jstring>( env->GetObjectField( jconfig, fid ) );
+		const char* szSettingsLocation = env->GetStringUTFChars(strSettingsLocation, &isCopy );
 
-	jboolean isCopy;
-	jfieldID fid;
+		//
+		//			bool			m_compressPlaylists;
+		//			bool			m_dontSaveMetadataForPlaylists;
+		//			bool			m_initiallyUnloadPlaylists;
+		/*
+		fid = env->GetFieldID( cls, "m_tinySettings", "Z" );
+		jboolean tinySettings = env->GetBooleanField( jconfig, fid );
 
-	jclass cls = env->GetObjectClass(jconfig);
-	
-	// appkey
-	fid = env->GetFieldID( cls, "m_appKey", "[C" );
-	jobject appKeyObj = env->GetObjectField( jconfig, fid );
-	jcharArray appKeyCharArray = static_cast<jcharArray>(appKeyObj);
-	jchar* appKey = env->GetCharArrayElements( appKeyCharArray, &isCopy );
+		fid = env->GetFieldID( cls, "m_tinySettings", "Z" );
+		jboolean tinySettings = env->GetBooleanField( jconfig, fid );
 
-	fid = env->GetFieldID( cls, "m_appKeySize", "I" );
-	jint appKeySize = env->GetIntField( jconfig, fid );
+		fid = env->GetFieldID( cls, "m_tinySettings", "Z" );
+		jboolean tinySettings = env->GetBooleanField( jconfig, fid );
+		*/
 
-	// make local binary copy of key
-	uint8_t* localAppKey = new uint8_t[ appKeySize ];
-	for (int i=0; i<appKeySize; i++)
-	{
-		localAppKey[i] = (uint8_t) appKey[i];
-	}
+		fid = env->GetFieldID( cls, "m_userAgent", "Ljava/lang/String;" );	
+		jstring strUserAgent = static_cast<jstring>( env->GetObjectField( jconfig, fid ) );
+		const char* szUserAgent = env->GetStringUTFChars(strUserAgent, &isCopy );
+	  	
+		Spotify::JSession::Config config;
+		config.m_appKey = localAppKey;
+		config.m_appKeySize = appKeySize;
+		config.m_cacheLocation = szCacheLocation;
+		config.m_settingsLocation = szSettingsLocation;
+		config.m_userAgent = szUserAgent;
 
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "--- JSession:initialise:appKeySize:%d", appKeySize);
+		__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "--- JSession:initialise:m_appKey:%s", config.m_appKey);
 
-	fid = env->GetFieldID( cls, "m_cacheLocation", "Ljava/lang/String;" );	
-	jstring strCacheLocation = static_cast<jstring>( env->GetObjectField( jconfig, fid ) );
-	const char* szCacheLocation = env->GetStringUTFChars(strCacheLocation, &isCopy );
-
-	fid = env->GetFieldID( cls, "m_settingsLocation", "Ljava/lang/String;" );	
-	jstring strSettingsLocation = static_cast<jstring>( env->GetObjectField( jconfig, fid ) );
-	const char* szSettingsLocation = env->GetStringUTFChars(strSettingsLocation, &isCopy );
-
-	//
-	//			bool			m_compressPlaylists;
-	//			bool			m_dontSaveMetadataForPlaylists;
-	//			bool			m_initiallyUnloadPlaylists;
-	/*
-	fid = env->GetFieldID( cls, "m_tinySettings", "Z" );
-	jboolean tinySettings = env->GetBooleanField( jconfig, fid );
-
-	fid = env->GetFieldID( cls, "m_tinySettings", "Z" );
-	jboolean tinySettings = env->GetBooleanField( jconfig, fid );
-
-	fid = env->GetFieldID( cls, "m_tinySettings", "Z" );
-	jboolean tinySettings = env->GetBooleanField( jconfig, fid );
-	*/
-
-	fid = env->GetFieldID( cls, "m_userAgent", "Ljava/lang/String;" );	
-	jstring strUserAgent = static_cast<jstring>( env->GetObjectField( jconfig, fid ) );
-	const char* szUserAgent = env->GetStringUTFChars(strUserAgent, &isCopy );
-  	
-	Spotify::JSession::Config config;
-	config.m_appKey = localAppKey;
-	config.m_appKeySize = appKeySize;
-	config.m_cacheLocation = szCacheLocation;
-	config.m_settingsLocation = szSettingsLocation;
-	config.m_userAgent = szUserAgent;
-
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "--- JSession:initialise:m_appKey:%s", config.m_appKey);
-
-	Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
-	sp_error error = pSession->Initialise( config );
-	
-	env->ReleaseStringUTFChars(strCacheLocation, szCacheLocation);
-	env->ReleaseStringUTFChars(strSettingsLocation, szSettingsLocation);
-	env->ReleaseStringUTFChars(strUserAgent, szUserAgent);
-
-	delete [] localAppKey;
-	env->ReleaseCharArrayElements( appKeyCharArray, appKey, 0 );
-	
-	//create a track
-	pSession->pTrack = pSession->CreateTrack();
-
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "### JSession:initialise:end:%d", error);
-
-	return error;
-}
-
-JNIEXPORT void JNICALL Java_com_Spotify_Session_Shutdown
-  (JNIEnv *env, jobject object, jint nativePtr)
-{
-	JSESSION_VALIDATE_THREAD();
-
-	Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
-
-	pSession->Shutdown();		
-}
-
-JNIEXPORT void JNICALL Java_com_Spotify_Session_Update
-  (JNIEnv *env, jobject object, jint nativePtr)
-{
-	JSESSION_VALIDATE_THREAD();
-
-	Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
-
-	pSession->Update();
-}
-
-JNIEXPORT void JNICALL Java_com_Spotify_Session_Login
-  (JNIEnv *env, jobject object, jint nativePtr, jstring username, jstring password)
-{
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "### Jsession:login");
-
-	JSESSION_VALIDATE_THREAD();
-
-	Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
-
-	jboolean isCopy;
-	const char* szUsername = env->GetStringUTFChars(username, &isCopy );
-	const char* szPassword = env->GetStringUTFChars(password, &isCopy );
-
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "--- Jsession:login:%s,%s", szUsername, szPassword);
-
-	pSession->Login( szUsername, szPassword );
-
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "### Jsession:login:end");
-
-	env->ReleaseStringUTFChars( username, szUsername );
-	env->ReleaseStringUTFChars( password, szPassword );
-}
-
-JNIEXPORT void JNICALL Java_com_Spotify_Session_Logout
-  (JNIEnv *env, jobject object, jint nativePtr)
-{
-	JSESSION_VALIDATE_THREAD();
-
-	Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
-
-	pSession->Logout();
-}
-
-JNIEXPORT jboolean JNICALL Java_com_Spotify_Session_IsLoggedIn
-  (JNIEnv *env, jobject object, jint nativePtr)
-{
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "### JSession:IsLoggedIn");
-
-	JSESSION_VALIDATE_THREAD();
-
-	Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
-
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "### JSession:IsLoggedIn:end");
-	return pSession->IsLoggedIn();
-}
-
-JNIEXPORT jboolean JNICALL Java_com_Spotify_Session_IsLoaded
-  (JNIEnv *env, jobject object, jint nativePtr, jboolean recursive)
-{
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "### JSession:IsLoaded");
-
-	JSESSION_VALIDATE_THREAD();
-
-	Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
-	bool loaded = pSession->pTrack->IsLoading(recursive);
-
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "### JSession:IsLoaded:end:Loaded:%d",loaded);
-
-	return loaded;
-}
-
-JNIEXPORT jint JNICALL Java_com_Spotify_Session_GetConnectionState
-  (JNIEnv *env, jobject object, jint nativePtr)
-{
-	JSESSION_VALIDATE_THREAD();
-
-	Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
-	return pSession->GetConnectionState();
-}
-
-static Spotify::Track* GetTrackFromNativePtr( JNIEnv* env, jobject track )
-{
-	JSESSION_VALIDATE_THREAD();
-
-	// get Track ptr from track->m_nativePtr
-	jclass cls = env->FindClass("com/Spotify/Track");
-	jfieldID fid = env->GetFieldID( cls, "m_nativePtr", "I");
-	
-	jint nativePtr = env->GetIntField( track, fid );
-	Spotify::PlayListElement* pElement = reinterpret_cast< Spotify::PlayListElement* >( Spotify::NativePtrToPointer( nativePtr ) );
-
-	return static_cast< Spotify::Track* >( pElement );
-}
-
-JNIEXPORT jint JNICALL Java_com_Spotify_Session_Load
-  (JNIEnv *env, jobject object, jint nativePtr, jstring trackid)
-{
-	JSESSION_VALIDATE_THREAD();
-
-	Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
-
-	//Spotify::Track* pTrack = GetTrackFromNativePtr( env, track );
-
-	jboolean isCopy;
-	const char* szTrackid = env->GetStringUTFChars(trackid, &isCopy );
-
-	pSession->pTrack->Load(szTrackid);
-
-	return pSession->Load( pSession->pTrack );
-}
-
-JNIEXPORT void JNICALL Java_com_Spotify_Session_Unload
-  (JNIEnv *env, jobject object, jint nativePtr)
-{
-	JSESSION_VALIDATE_THREAD();
-
-	Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
-	
-	pSession->Unload( pSession->pTrack);
-	pSession->pTrack->Unload();
-}
-
-JNIEXPORT jobject JNICALL Java_com_Spotify_Session_GetCurrentTrack
-  (JNIEnv *env, jobject object, jint nativePtr)
-{
-	JSESSION_VALIDATE_THREAD();
-
-	Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
-	Spotify::Track* pTrack = pSession->GetCurrentTrack();
-
-	if (pTrack)
-	{
-		Spotify::JTrack* pJTrack = static_cast<Spotify::JTrack*>( pTrack );
-		jobject jtrack = pJTrack->GetJavaObject();
+		Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
+		sp_error error = pSession->Initialise( config );
 		
-		return jtrack;
+		env->ReleaseStringUTFChars(strCacheLocation, szCacheLocation);
+		env->ReleaseStringUTFChars(strSettingsLocation, szSettingsLocation);
+		env->ReleaseStringUTFChars(strUserAgent, szUserAgent);
+
+		delete [] localAppKey;
+		env->ReleaseCharArrayElements( appKeyCharArray, appKey, 0 );
+		
+		//create a track
+		pSession->pTrack = pSession->CreateTrack();
+
+		__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "### JSession:initialise:end:%d", error);
+
+		return error;
 	}
 
-	return NULL;
-}
-
-JNIEXPORT void JNICALL Java_com_Spotify_Session_Seek
-  (JNIEnv *env, jobject object, jint nativePtr, jint offset)
-{
-	JSESSION_VALIDATE_THREAD();
-
-	Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
-
-	pSession->Seek( offset );
-}
-
-JNIEXPORT void JNICALL Java_com_Spotify_Session_Play
-  (JNIEnv *env, jobject object, jint nativePtr)
-{
-	JSESSION_VALIDATE_THREAD();
-
-	Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
-
-	pSession->Play(pSession->pTrack);
-}
-
-JNIEXPORT void JNICALL Java_com_Spotify_Session_Stop
-  (JNIEnv *env, jobject object, jint nativePtr)
-{
-	JSESSION_VALIDATE_THREAD();
-
-	Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
-
-	pSession->Stop();
-}
-
-JNIEXPORT jint JNICALL Java_com_Spotify_Session_PreFetch
-  (JNIEnv *env, jobject object, jint nativePtr, jobject track)
-{
-	JSESSION_VALIDATE_THREAD();
-
-	Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
-
-	Spotify::Track* pTrack = GetTrackFromNativePtr( env, track );
-
-	sp_error error = pSession->PreFetch( pTrack );
-	return error;
-}
-
-JNIEXPORT jobject JNICALL Java_com_Spotify_Session_GetPlayListContainer
-  (JNIEnv *env, jobject object, jint nativePtr)
-{
-	JSESSION_VALIDATE_THREAD();
-
-	Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
-
-	Spotify::JPlayListContainer* pPlayListContainer = static_cast<Spotify::JPlayListContainer*>( pSession->GetPlayListContainer() );
-
-	if (pPlayListContainer)
+	JNIEXPORT void JNICALL Java_com_Spotify_Session_Shutdown
+	  (JNIEnv *env, jobject object, jint nativePtr)
 	{
-		jobject jPlayListContainer = pPlayListContainer->GetJavaObject();
+		JSESSION_VALIDATE_THREAD();
 
-		return jPlayListContainer;
+		Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
+
+		pSession->Shutdown();		
 	}
-	else
+
+	JNIEXPORT void JNICALL Java_com_Spotify_Session_Update
+	  (JNIEnv *env, jobject object, jint nativePtr)
 	{
+		JSESSION_VALIDATE_THREAD();
+
+		Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
+
+		pSession->Update();
+	}
+
+	JNIEXPORT void JNICALL Java_com_Spotify_Session_Login
+	  (JNIEnv *env, jobject object, jint nativePtr, jstring username, jstring password)
+	{
+		__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "### Jsession:login");
+
+		JSESSION_VALIDATE_THREAD();
+
+		Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
+
+		jboolean isCopy;
+		const char* szUsername = env->GetStringUTFChars(username, &isCopy );
+		const char* szPassword = env->GetStringUTFChars(password, &isCopy );
+
+		__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "--- Jsession:login:%s,%s", szUsername, szPassword);
+
+		pSession->Login( szUsername, szPassword );
+
+		__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "### Jsession:login:end");
+
+		env->ReleaseStringUTFChars( username, szUsername );
+		env->ReleaseStringUTFChars( password, szPassword );
+	}
+
+	JNIEXPORT void JNICALL Java_com_Spotify_Session_Logout
+	  (JNIEnv *env, jobject object, jint nativePtr)
+	{
+		JSESSION_VALIDATE_THREAD();
+
+		Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
+
+		pSession->Logout();
+	}
+
+	JNIEXPORT jboolean JNICALL Java_com_Spotify_Session_IsLoggedIn
+	  (JNIEnv *env, jobject object, jint nativePtr)
+	{
+		__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "### JSession:IsLoggedIn");
+
+		JSESSION_VALIDATE_THREAD();
+
+		Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
+
+		__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "### JSession:IsLoggedIn:end");
+		return pSession->IsLoggedIn();
+	}
+
+	JNIEXPORT jboolean JNICALL Java_com_Spotify_Session_IsLoaded
+	  (JNIEnv *env, jobject object, jint nativePtr, jboolean recursive)
+	{
+		__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "### JSession:IsLoaded");
+
+		JSESSION_VALIDATE_THREAD();
+
+		Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
+		bool loaded = pSession->pTrack->IsLoading(recursive);
+
+		__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "### JSession:IsLoaded:end:Loaded:%d",loaded);
+
+		return loaded;
+	}
+
+	JNIEXPORT jint JNICALL Java_com_Spotify_Session_GetConnectionState
+	  (JNIEnv *env, jobject object, jint nativePtr)
+	{
+		JSESSION_VALIDATE_THREAD();
+
+		Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
+		return pSession->GetConnectionState();
+	}
+
+	static Spotify::Track* GetTrackFromNativePtr( JNIEnv* env, jobject track )
+	{
+		JSESSION_VALIDATE_THREAD();
+
+		// get Track ptr from track->m_nativePtr
+		jclass cls = env->FindClass("com/Spotify/Track");
+		jfieldID fid = env->GetFieldID( cls, "m_nativePtr", "I");
+		
+		jint nativePtr = env->GetIntField( track, fid );
+		Spotify::PlayListElement* pElement = reinterpret_cast< Spotify::PlayListElement* >( Spotify::NativePtrToPointer( nativePtr ) );
+
+		return static_cast< Spotify::Track* >( pElement );
+	}
+
+	JNIEXPORT jint JNICALL Java_com_Spotify_Session_Load
+	  (JNIEnv *env, jobject object, jint nativePtr, jstring trackid)
+	{
+		JSESSION_VALIDATE_THREAD();
+
+		Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
+
+		//Spotify::Track* pTrack = GetTrackFromNativePtr( env, track );
+
+		jboolean isCopy;
+		const char* szTrackid = env->GetStringUTFChars(trackid, &isCopy );
+
+		pSession->pTrack->Load(szTrackid);
+
+		return pSession->Load( pSession->pTrack );
+	}
+
+	JNIEXPORT void JNICALL Java_com_Spotify_Session_Unload
+	  (JNIEnv *env, jobject object, jint nativePtr)
+	{
+		JSESSION_VALIDATE_THREAD();
+
+		Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
+		
+		pSession->Unload( pSession->pTrack);
+		pSession->pTrack->Unload();
+	}
+
+	JNIEXPORT jobject JNICALL Java_com_Spotify_Session_GetCurrentTrack
+	  (JNIEnv *env, jobject object, jint nativePtr)
+	{
+		JSESSION_VALIDATE_THREAD();
+
+		Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
+		Spotify::Track* pTrack = pSession->GetCurrentTrack();
+
+		if (pTrack)
+		{
+			Spotify::JTrack* pJTrack = static_cast<Spotify::JTrack*>( pTrack );
+			jobject jtrack = pJTrack->GetJavaObject();
+			
+			return jtrack;
+		}
+
 		return NULL;
 	}
-}
 
-JNIEXPORT void JNICALL Java_com_Spotify_Session_SetPreferredBitrate
-  (JNIEnv *env, jobject object, jint nativePtr, jint bitrate)
-{
-	JSESSION_VALIDATE_THREAD();
+	JNIEXPORT void JNICALL Java_com_Spotify_Session_Seek
+	  (JNIEnv *env, jobject object, jint nativePtr, jint offset)
+	{
+		JSESSION_VALIDATE_THREAD();
 
-	Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
-	pSession->SetPreferredBitrate( static_cast<sp_bitrate>(bitrate) );
+		Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
+
+		pSession->Seek( offset );
+	}
+
+	JNIEXPORT void JNICALL Java_com_Spotify_Session_Play
+	  (JNIEnv *env, jobject object, jint nativePtr)
+	{
+		JSESSION_VALIDATE_THREAD();
+
+		Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
+
+		pSession->Play(pSession->pTrack);
+	}
+
+	JNIEXPORT void JNICALL Java_com_Spotify_Session_Stop
+	  (JNIEnv *env, jobject object, jint nativePtr)
+	{
+		JSESSION_VALIDATE_THREAD();
+
+		Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
+
+		pSession->Stop();
+	}
+
+	JNIEXPORT jint JNICALL Java_com_Spotify_Session_PreFetch
+	  (JNIEnv *env, jobject object, jint nativePtr, jobject track)
+	{
+		JSESSION_VALIDATE_THREAD();
+
+		Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
+
+		Spotify::Track* pTrack = GetTrackFromNativePtr( env, track );
+
+		sp_error error = pSession->PreFetch( pTrack );
+		return error;
+	}
+
+	JNIEXPORT jobject JNICALL Java_com_Spotify_Session_GetPlayListContainer
+	  (JNIEnv *env, jobject object, jint nativePtr)
+	{
+		JSESSION_VALIDATE_THREAD();
+
+		Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
+
+		Spotify::JPlayListContainer* pPlayListContainer = static_cast<Spotify::JPlayListContainer*>( pSession->GetPlayListContainer() );
+
+		if (pPlayListContainer)
+		{
+			jobject jPlayListContainer = pPlayListContainer->GetJavaObject();
+
+			return jPlayListContainer;
+		}
+		else
+		{
+			return NULL;
+		}
+	}
+
+	JNIEXPORT void JNICALL Java_com_Spotify_Session_SetPreferredBitrate
+	  (JNIEnv *env, jobject object, jint nativePtr, jint bitrate)
+	{
+		JSESSION_VALIDATE_THREAD();
+
+		Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
+		pSession->SetPreferredBitrate( static_cast<sp_bitrate>(bitrate) );
+	}
 }
 
 namespace Spotify

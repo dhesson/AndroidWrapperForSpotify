@@ -21,50 +21,52 @@
 
 #include "Spotify/Spotify_Artist.h"
 
-static Spotify::JArtist* GetArtistNativePtr( JNIEnv* env, jobject object )
-{
-	jclass cls = env->FindClass("com/Spotify/Artist");
-	jfieldID fid = env->GetFieldID( cls, "m_nativePtr", "I" );
-	int nativePtr = env->GetIntField( object, fid );
-	
-	Spotify::JArtist* pArtist = reinterpret_cast<Spotify::JArtist*>( Spotify::NativePtrToPointer( nativePtr ) );
+extern "C" {
+	static Spotify::JArtist* GetArtistNativePtr( JNIEnv* env, jobject object )
+	{
+		jclass cls = env->FindClass("com/Spotify/Artist");
+		jfieldID fid = env->GetFieldID( cls, "m_nativePtr", "I" );
+		int nativePtr = env->GetIntField( object, fid );
+		
+		Spotify::JArtist* pArtist = reinterpret_cast<Spotify::JArtist*>( Spotify::NativePtrToPointer( nativePtr ) );
 
-	return pArtist;
-}
+		return pArtist;
+	}
 
 
-JNIEXPORT jstring JNICALL Java_Spotify_Artist_GetName
-  (JNIEnv *env, jobject object)
-{
-	JSESSION_VALIDATE_THREAD();	
+	JNIEXPORT jstring JNICALL Java_com_Spotify_Artist_GetName
+	  (JNIEnv *env, jobject object)
+	{
+		JSESSION_VALIDATE_THREAD();	
 
-	Spotify::JArtist* pArtist = GetArtistNativePtr( env, object );
+		Spotify::JArtist* pArtist = GetArtistNativePtr( env, object );
 
-	jstring jstr = env->NewStringUTF( pArtist->GetName().c_str() );
+		jstring jstr = env->NewStringUTF( pArtist->GetName().c_str() );
 
-	return jstr;
-}
+		return jstr;
+	}
 
-JNIEXPORT jboolean JNICALL Java_Spotify_Artist_IsLoading
-  (JNIEnv *env, jobject object)
-{
-	JSESSION_VALIDATE_THREAD();	
+	JNIEXPORT jboolean JNICALL Java_com_Spotify_Artist_IsLoading
+	  (JNIEnv *env, jobject object)
+	{
+		JSESSION_VALIDATE_THREAD();	
 
-	Spotify::JArtist* pArtist = GetArtistNativePtr( env, object );
+		Spotify::JArtist* pArtist = GetArtistNativePtr( env, object );
 
-	return pArtist->IsLoading();
-}
+		return pArtist->IsLoading();
+	}
 
-JNIEXPORT void JNICALL Java_Spotify_Artist_Release
-  (JNIEnv *env, jobject object)
-{
-	Spotify::JArtist* pArtist = GetArtistNativePtr( env, object );
+	JNIEXPORT void JNICALL Java_com_Spotify_Artist_Release
+	  (JNIEnv *env, jobject object)
+	{
+		Spotify::JArtist* pArtist = GetArtistNativePtr( env, object );
 
-	pArtist->ThreadSafeRelease();
+		pArtist->ThreadSafeRelease();
 
-	jclass cls = env->FindClass("com/Spotify/Artist");
-	jfieldID fid = env->GetFieldID( cls, "m_nativePtr", "I" );
-	env->SetIntField( object, fid, 0 );
+		jclass cls = env->FindClass("com/Spotify/Artist");
+		jfieldID fid = env->GetFieldID( cls, "m_nativePtr", "I" );
+		env->SetIntField( object, fid, 0 );
+	}
 }
 
 namespace Spotify

@@ -44,63 +44,64 @@ JNIEXPORT jboolean JNICALL Java_com_Spotify_Track_Load
 
 	return isLoad;
 }*/
+extern "C" {
+	JNIEXPORT jint JNICALL Java_com_Spotify_Track_GetDuration
+	  (JNIEnv *env, jobject object)
+	{
+		JSESSION_VALIDATE_THREAD();
 
-JNIEXPORT jint JNICALL Java_com_Spotify_Track_GetDuration
-  (JNIEnv *env, jobject object)
-{
-	JSESSION_VALIDATE_THREAD();
-
-	Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, object );
-	Spotify::Track* pTrack = static_cast<Spotify::Track*>( pElement );
-	
-	return pTrack->GetDuration();
-}
-
-JNIEXPORT jint JNICALL Java_com_Spotify_Track_GetNumArtists
-  (JNIEnv *env, jobject object)
-{
-	JSESSION_VALIDATE_THREAD();
-
-	Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, object );
-	Spotify::Track* pTrack = static_cast<Spotify::Track*>( pElement );
-
-	return pTrack->GetNumArtists();
-}
-
-JNIEXPORT jobject JNICALL Java_com_Spotify_Track_GetArtist
-  (JNIEnv *env, jobject object, jint index)
-{
-	JSESSION_VALIDATE_THREAD();
-
-	Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, object );
-	Spotify::Track* pTrack = static_cast<Spotify::Track*>( pElement );
-
-	Spotify::JArtist* pArtist = static_cast<Spotify::JArtist*>( pTrack->GetArtist( index ) );
-
-	jclass cls = env->FindClass( "com/Spotify/Artist" );
-	jmethodID cid = env->GetMethodID( cls, "<init>", "(I)V");
+		Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, object );
+		Spotify::Track* pTrack = static_cast<Spotify::Track*>( pElement );
 		
-	jobject javaObject = env->NewObject( cls, cid, PointerToNativePtr(pArtist) );
+		return pTrack->GetDuration();
+	}
 
-	return javaObject;
-}
+	JNIEXPORT jint JNICALL Java_com_Spotify_Track_GetNumArtists
+	  (JNIEnv *env, jobject object)
+	{
+		JSESSION_VALIDATE_THREAD();
 
-JNIEXPORT jobject JNICALL Java_com_Spotify_Track_GetAlbum
-  (JNIEnv *env, jobject object)
-{
-	JSESSION_VALIDATE_THREAD();
+		Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, object );
+		Spotify::Track* pTrack = static_cast<Spotify::Track*>( pElement );
 
-	Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, object );
-	Spotify::Track* pTrack = static_cast<Spotify::Track*>( pElement );
+		return pTrack->GetNumArtists();
+	}
 
-	Spotify::JAlbum* pAlbum = static_cast<Spotify::JAlbum*>( pTrack->GetAlbum() );
+	JNIEXPORT jobject JNICALL Java_com_Spotify_Track_GetArtist
+	  (JNIEnv *env, jobject object, jint index)
+	{
+		JSESSION_VALIDATE_THREAD();
 
-	jclass cls = env->FindClass( "com/Spotify/Album" );
-	jmethodID cid = env->GetMethodID( cls, "<init>", "(I)V");
-		
-	jobject javaObject = env->NewObject( cls, cid, PointerToNativePtr(pAlbum) );
+		Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, object );
+		Spotify::Track* pTrack = static_cast<Spotify::Track*>( pElement );
 
-	return javaObject;
+		Spotify::JArtist* pArtist = static_cast<Spotify::JArtist*>( pTrack->GetArtist( index ) );
+
+		jclass cls = env->FindClass( "com/Spotify/Artist" );
+		jmethodID cid = env->GetMethodID( cls, "<init>", "(I)V");
+			
+		jobject javaObject = env->NewObject( cls, cid, PointerToNativePtr(pArtist) );
+
+		return javaObject;
+	}
+
+	JNIEXPORT jobject JNICALL Java_com_Spotify_Track_GetAlbum
+	  (JNIEnv *env, jobject object)
+	{
+		JSESSION_VALIDATE_THREAD();
+
+		Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, object );
+		Spotify::Track* pTrack = static_cast<Spotify::Track*>( pElement );
+
+		Spotify::JAlbum* pAlbum = static_cast<Spotify::JAlbum*>( pTrack->GetAlbum() );
+
+		jclass cls = env->FindClass( "com/Spotify/Album" );
+		jmethodID cid = env->GetMethodID( cls, "<init>", "(I)V");
+			
+		jobject javaObject = env->NewObject( cls, cid, PointerToNativePtr(pAlbum) );
+
+		return javaObject;
+	}
 }
 
 namespace Spotify

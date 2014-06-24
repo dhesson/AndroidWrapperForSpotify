@@ -21,63 +21,65 @@
 
 #include "Spotify/Spotify_Image.h"
 
-static Spotify::JImage* GetImageNativePtr( JNIEnv* env, jobject object )
-{
-	jclass cls = env->FindClass("com/Spotify/Image");
-	jfieldID fid = env->GetFieldID( cls, "m_nativePtr", "I" );
-	int nativePtr = env->GetIntField( object, fid );
-	
-	Spotify::JImage* pImage = reinterpret_cast<Spotify::JImage*>( Spotify::NativePtrToPointer( nativePtr ) );
-
-	return pImage;
-}
-
-
-JNIEXPORT jcharArray JNICALL Java_Spotify_Image_GetData
-  (JNIEnv *env, jobject object)
-{
-	JSESSION_VALIDATE_THREAD();	
-
-	Spotify::JImage* pImage = GetImageNativePtr( env, object );
-
-	size_t numBytes;
-
-	const void* pData = pImage->GetData( numBytes );
-
-	jcharArray charArray = env->NewCharArray( numBytes );
-		
-	jboolean isCopy = false;
-	jchar* pCharData = env->GetCharArrayElements( charArray, &isCopy );
-	for (size_t i=0; i<numBytes; i++)
+extern "C" {
+	static Spotify::JImage* GetImageNativePtr( JNIEnv* env, jobject object )
 	{
-		pCharData[i] = ( (byte*) pData)[i];
-	}
+		jclass cls = env->FindClass("com/Spotify/Image");
+		jfieldID fid = env->GetFieldID( cls, "m_nativePtr", "I" );
+		int nativePtr = env->GetIntField( object, fid );
 		
-	env->ReleaseCharArrayElements( charArray, pCharData, 0);
+		Spotify::JImage* pImage = reinterpret_cast<Spotify::JImage*>( Spotify::NativePtrToPointer( nativePtr ) );
 
-	return charArray;
-}
+		return pImage;
+	}
 
-JNIEXPORT jboolean JNICALL Java_Spotify_Image_IsLoading
-  (JNIEnv *env, jobject object)
-{
-	JSESSION_VALIDATE_THREAD();	
 
-	Spotify::JImage* pImage = GetImageNativePtr( env, object );
+	JNIEXPORT jcharArray JNICALL Java_com_Spotify_Image_GetData
+	  (JNIEnv *env, jobject object)
+	{
+		JSESSION_VALIDATE_THREAD();	
 
-	return pImage->IsLoading();
-}
+		Spotify::JImage* pImage = GetImageNativePtr( env, object );
 
-JNIEXPORT void JNICALL Java_Spotify_Image_Release
-  (JNIEnv *env, jobject object)
-{
-	Spotify::JImage* pImage = GetImageNativePtr( env, object );
+		size_t numBytes;
 
-	pImage->ThreadSafeRelease();
+		const void* pData = pImage->GetData( numBytes );
 
-	jclass cls = env->FindClass("com/Spotify/Image");
-	jfieldID fid = env->GetFieldID( cls, "m_nativePtr", "I" );
-	env->SetIntField( object, fid, 0 );
+		jcharArray charArray = env->NewCharArray( numBytes );
+			
+		jboolean isCopy = false;
+		jchar* pCharData = env->GetCharArrayElements( charArray, &isCopy );
+		for (size_t i=0; i<numBytes; i++)
+		{
+			pCharData[i] = ( (byte*) pData)[i];
+		}
+			
+		env->ReleaseCharArrayElements( charArray, pCharData, 0);
+
+		return charArray;
+	}
+
+	JNIEXPORT jboolean JNICALL Java_com_Spotify_Image_IsLoading
+	  (JNIEnv *env, jobject object)
+	{
+		JSESSION_VALIDATE_THREAD();	
+
+		Spotify::JImage* pImage = GetImageNativePtr( env, object );
+
+		return pImage->IsLoading();
+	}
+
+	JNIEXPORT void JNICALL Java_com_Spotify_Image_Release
+	  (JNIEnv *env, jobject object)
+	{
+		Spotify::JImage* pImage = GetImageNativePtr( env, object );
+
+		pImage->ThreadSafeRelease();
+
+		jclass cls = env->FindClass("com/Spotify/Image");
+		jfieldID fid = env->GetFieldID( cls, "m_nativePtr", "I" );
+		env->SetIntField( object, fid, 0 );
+	}
 }
 
 namespace Spotify

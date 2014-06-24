@@ -31,92 +31,94 @@
 
 #define PARAONIA_PRINTF(msg, ...)	//printf(msg,__VA_ARGS__)
 
-JNIEXPORT jobject JNICALL Java_Spotify_PlayListElement_GetParent
+ extern "C" {
+ 	JNIEXPORT jobject JNICALL Java_com_Spotify_PlayListElement_GetParent
   (JNIEnv *env, jobject javaObject)
-{
-	Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, javaObject );
-	
-	Spotify::PlayListElement* pParent = pElement->GetParent();
-	if (pParent)
 	{
-		Spotify::JPlayListElement* pJParent = reinterpret_cast<Spotify::JPlayListElement*>( pParent->GetUserData() );
+		Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, javaObject );
+		
+		Spotify::PlayListElement* pParent = pElement->GetParent();
+		if (pParent)
+		{
+			Spotify::JPlayListElement* pJParent = reinterpret_cast<Spotify::JPlayListElement*>( pParent->GetUserData() );
+		}
+
+		return NULL;
 	}
 
-	return NULL;
-}
-
-JNIEXPORT jboolean JNICALL Java_Spotify_PlayListElement_HasChildren
-  (JNIEnv *env, jobject javaObject)
-{
-	Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, javaObject );
-	return pElement->HasChildren();
-}
-
-JNIEXPORT jint JNICALL Java_Spotify_PlayListElement_GetNumChildren
-  (JNIEnv *env, jobject javaObject)
-{
-	Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, javaObject );
-	int numChildren = pElement->GetNumChildren();
-	return numChildren;
-}
-
-JNIEXPORT jobject JNICALL Java_Spotify_PlayListElement_GetChild
-  (JNIEnv *env, jobject javaObject, jint index)
-{
-	Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, javaObject );
-		
-	Spotify::PlayListElement* pChild = pElement->GetChild( index );
-		
-	if (pChild)
-	{	
-		Spotify::JPlayListElement* pJChild = reinterpret_cast<Spotify::JPlayListElement*>( pChild->GetUserData() );		
-		jobject jChild = pJChild->GetJavaObject();
-				
-		PARAONIA_PRINTF("GetChild[%d] pElement [0x%08X] pChild [0x%08X] pJChild [0x%08X] jChild [0x%08X]\n", int(index), pElement, pChild, pJChild, jChild );
-
-		return jChild;
+	JNIEXPORT jboolean JNICALL Java_com_Spotify_PlayListElement_HasChildren
+	  (JNIEnv *env, jobject javaObject)
+	{
+		Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, javaObject );
+		return pElement->HasChildren();
 	}
 
-	return NULL;
-
-}
-
-JNIEXPORT jboolean JNICALL Java_Spotify_PlayListElement_IsLoading
-  (JNIEnv *env, jobject javaObject, jboolean recursive )
-{
-	Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, javaObject );
-	bool isLoading = pElement->IsLoading( recursive == JNI_TRUE );
-	return isLoading;
-}
-
-JNIEXPORT jstring JNICALL Java_Spotify_PlayListElement_GetName
-  (JNIEnv *env, jobject javaObject)
-{
-	Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, javaObject );
-
-	jstring jstr = env->NewStringUTF( pElement->GetName().c_str() );
-	return jstr;
-}
-
-JNIEXPORT jint JNICALL Java_Spotify_PlayListElement_GetType
-  (JNIEnv *env, jobject javaObject)
-{
-	Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, javaObject );
-	return pElement->GetType();
-}
-
-JNIEXPORT void JNICALL Java_Spotify_PlayListElement_Release
-  (JNIEnv *env, jobject javaObject)
-{
-	Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, javaObject );
-
-	if (pElement)
+	JNIEXPORT jint JNICALL Java_com_Spotify_PlayListElement_GetNumChildren
+	  (JNIEnv *env, jobject javaObject)
 	{
-		Spotify::JPlayListElement* pJElement = reinterpret_cast<Spotify::JPlayListElement*>( pElement->GetUserData() );
-	
-		pJElement->ReleaseJavaObject( pElement, javaObject );
-	
-		static_cast<Spotify::JSession*>(pElement->GetSession())->ThreadSafeRelease( pElement );
+		Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, javaObject );
+		int numChildren = pElement->GetNumChildren();
+		return numChildren;
+	}
+
+	JNIEXPORT jobject JNICALL Java_com_Spotify_PlayListElement_GetChild
+	  (JNIEnv *env, jobject javaObject, jint index)
+	{
+		Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, javaObject );
+			
+		Spotify::PlayListElement* pChild = pElement->GetChild( index );
+			
+		if (pChild)
+		{	
+			Spotify::JPlayListElement* pJChild = reinterpret_cast<Spotify::JPlayListElement*>( pChild->GetUserData() );		
+			jobject jChild = pJChild->GetJavaObject();
+					
+			PARAONIA_PRINTF("GetChild[%d] pElement [0x%08X] pChild [0x%08X] pJChild [0x%08X] jChild [0x%08X]\n", int(index), pElement, pChild, pJChild, jChild );
+
+			return jChild;
+		}
+
+		return NULL;
+
+	}
+
+	JNIEXPORT jboolean JNICALL Java_com_Spotify_PlayListElement_IsLoading
+	  (JNIEnv *env, jobject javaObject, jboolean recursive )
+	{
+		Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, javaObject );
+		bool isLoading = pElement->IsLoading( recursive == JNI_TRUE );
+		return isLoading;
+	}
+
+	JNIEXPORT jstring JNICALL Java_com_Spotify_PlayListElement_GetName
+	  (JNIEnv *env, jobject javaObject)
+	{
+		Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, javaObject );
+
+		jstring jstr = env->NewStringUTF( pElement->GetName().c_str() );
+		return jstr;
+	}
+
+	JNIEXPORT jint JNICALL Java_com_Spotify_PlayListElement_GetType
+	  (JNIEnv *env, jobject javaObject)
+	{
+		Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, javaObject );
+		return pElement->GetType();
+	}
+
+	JNIEXPORT void JNICALL Java_com_Spotify_PlayListElement_Release
+	  (JNIEnv *env, jobject javaObject)
+	{
+		Spotify::PlayListElement* pElement = Spotify::JPlayListElement::GetPlayListElement( env, javaObject );
+
+		if (pElement)
+		{
+			Spotify::JPlayListElement* pJElement = reinterpret_cast<Spotify::JPlayListElement*>( pElement->GetUserData() );
+		
+			pJElement->ReleaseJavaObject( pElement, javaObject );
+		
+			static_cast<Spotify::JSession*>(pElement->GetSession())->ThreadSafeRelease( pElement );
+		}
 	}
 }
 
