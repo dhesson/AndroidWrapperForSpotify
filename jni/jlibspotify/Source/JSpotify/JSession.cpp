@@ -243,6 +243,14 @@ extern "C" {
 		return pSession->IsLoggedIn();
 	}
 
+	JNIEXPORT jstring JNICALL Java_com_Spotify_Session_GetUserDisplayName
+  	  (JNIEnv* env, jobject object, jint nativePtr)
+  	{
+  		JSESSION_VALIDATE_THREAD();
+  		Spotify::JSession* pSession = reinterpret_cast< Spotify::JSession* >( Spotify::NativePtrToPointer( nativePtr ) );
+  		return env->NewStringUTF( pSession->GetUserDisplayName().c_str() );
+  	}
+
 	JNIEXPORT jboolean JNICALL Java_com_Spotify_Session_IsLoaded
 	  (JNIEnv *env, jobject object, jint nativePtr, jboolean recursive)
 	{
@@ -257,6 +265,19 @@ extern "C" {
 
 		return loaded;
 	}
+
+	/*JNIEXPORT void JNICALL Java_com_Spotify_Session_Search
+	  (JNIEnv *env, jobject object, jstring query)
+	{
+		const char* szQuery = env->GetStringUTFChars(query, &isCopy);
+
+		__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "### JSession:Search %s", szQuery);
+		JSESSION_VALIDATE_THREAD();
+
+		sp_search_create(g)
+
+		(*env)->ReleaseStringUTFChars(env, jszComponent, szComponent);
+	}*/
 
 	JNIEXPORT jint JNICALL Java_com_Spotify_Session_GetConnectionState
 	  (JNIEnv *env, jobject object, jint nativePtr)

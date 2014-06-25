@@ -81,6 +81,14 @@ JNIEXPORT jboolean JNICALL Java_com_Spotify_Session_IsLoggedIn
 
 /*
  * Class:     Spotify_Session
+ * Method:    GetUserDisplayName
+ * Signature: (I)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_Spotify_Session_GetUserDisplayName
+  (JNIEnv *, jobject, jint);
+
+/*
+ * Class:     Spotify_Session
  * Method:    GetConnectionState
  * Signature: (I)I
  */

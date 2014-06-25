@@ -65,6 +65,11 @@ public class Session
 		return IsLoggedIn(m_nativePtr);
 	}
 
+	public String GetUserDisplayName()
+	{
+		return GetUserDisplayName(m_nativePtr);
+	}
+
 	final int SP_CONNECTION_STATE_LOGGED_OUT = 0; // /< User not yet logged in
 	final int SP_CONNECTION_STATE_LOGGED_IN = 1; // /< Logged in against a
 													// Spotify access point
@@ -277,6 +282,8 @@ public class Session
 	private native void Logout(int nativePtr);
 
 	private native boolean IsLoggedIn(int nativePtr);
+
+	private native String GetUserDisplayName(int nativePtr);
 	
 	private native boolean IsLoaded(int nativePtr, boolean recursive);
 

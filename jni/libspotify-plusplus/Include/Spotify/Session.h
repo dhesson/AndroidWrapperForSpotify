@@ -20,6 +20,7 @@
 // C-libs includes
 #include <stdio.h>
 #include <stdint.h>
+#include <string>
 #include <pthread.h>
 
 // Local Includes
@@ -73,6 +74,7 @@ namespace Spotify
 		virtual void		Logout();
 		
 		virtual bool		IsLoggedIn();
+		virtual std::string GetUserDisplayName();
 
 		virtual sp_connectionstate GetConnectionState();
 

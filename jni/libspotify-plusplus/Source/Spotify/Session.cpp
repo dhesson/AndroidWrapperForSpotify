@@ -232,6 +232,17 @@ namespace Spotify
 		return isloggedIn;
 	}
 
+	std::string Session::GetUserDisplayName()
+	{
+		if (m_pSession)
+		{
+			sp_user* user = sp_session_user(m_pSession);
+			return sp_user_display_name(user);
+		}
+
+		return NULL;
+	}
+
 	sp_connectionstate Session::GetConnectionState()
 	{
 		if (m_pSession)
