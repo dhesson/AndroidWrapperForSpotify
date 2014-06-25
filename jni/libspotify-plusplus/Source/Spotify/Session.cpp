@@ -275,6 +275,7 @@ namespace Spotify
 
 	void Session::Unload( Track* pTrack )
 	{
+		// Unload doesnt require a track argument --- not sure why all this is here.  Copy pasta?
 		__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "--- Session:Load:%s,%s",pTrack,pTrack->spTrack);
 		if (pTrack)
 		{
